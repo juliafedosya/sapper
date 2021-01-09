@@ -1,24 +1,27 @@
-"use strict";
+'use strict';
 (function() {
     const GAME_GRID_HEIGHT = 14;
     const GAME_GRID_WIDTH = 18;
     const BOMB_AMOUNT = 40;
-    const ROOT_ELEMENT = document.getElementById("app");
+    const ROOT_ELEMENT = document.getElementById('app');
     const BOMB_TYPE = 'BOMB'
     const NUMBER_TYPE = 'NUMBER'
     const EMPTY_TYPE = 'EMPTY'
+    const Y_ATTRIBUTE = 'data-y';
+    const X_ATTRIBUTE = 'data-x';
+    let bombFound = false;
 
     function createGameGridElements(gridData) {
         const rowGridElements = [];
 
         for (let i = 0; i < gridData.length; i++) {
-            let rowElememnt = document.createElement("div");
-            rowElememnt.className = "grid-row";
+            let rowElememnt = document.createElement('div');
+            rowElememnt.className = 'grid-row';
             for (let j = 0; j < gridData[i].length; j++) {
-                let cell = document.createElement("div");
-                cell.className = "grid-item";
-                cell.setAttribute('data-x', j)
-                cell.setAttribute('data-y', i)
+                let cell = document.createElement('div');
+                cell.className = 'grid-item';
+                cell.setAttribute(X_ATTRIBUTE, j)
+                cell.setAttribute(Y_ATTRIBUTE, i)
                 rowElememnt.appendChild(cell);
             }
             rowGridElements.push(rowElememnt);
@@ -106,43 +109,60 @@
         return gridData;
     }
 
+    function createHandleCellClick(gridData) {
+        return (event) => {
+            if (!bombFound) {
+                const target = event.target
+                if (target.classList.contains('grid-item')) {
+                    const xCoord = target.getAttribute(X_ATTRIBUTE);
+                    const yCoord = target.getAttribute(Y_ATTRIBUTE);
+                    let gridDataUnit = gridData[yCoord][xCoord];
+                    if (!!gridDataUnit) {
+                        let gridDataUnitType = gridDataUnit.type;
+                        if (gridDataUnitType === BOMB_TYPE) {
+                            bombFound = true;
+                            let gridItems = Array.from(document.getElementsByClassName('grid-item'));
+                            gridItems.forEach(elem => {
+                                let gridUnit = gridData[elem.getAttribute(Y_ATTRIBUTE)][elem.getAttribute(X_ATTRIBUTE)];
+                                if ((!!gridUnit) && gridUnit.type === BOMB_TYPE) {
+                                    elem.innerText = '*';
+                                    elem.classList.add('grid-bomb-item');
+                                }
+                            })
+                        } else {
+                            addClassByElementType(target, gridDataUnitType, gridDataUnit.number);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    function addClassByElementType(gridElement, elementType, number) {
+        if (elementType === NUMBER_TYPE) {
+            gridElement.innerText = number;
+            gridElement.classList.add('grid-number-item');
+        }
+        if (elementType === EMPTY_TYPE) {
+            gridElement.classList.add('grid-empty-item');
+        }
+        if (elementType === BOMB_TYPE) {
+            gridElement.innerText = '*';
+            gridElement.classList.add('grid-bomb-item');
+        }
+    }
+
     function initializeGameGrid() {
         const bombPositions = generateBombPositions(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, BOMB_AMOUNT);
         const gridData = generateGridData(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, bombPositions);
         // console.log('gridData', gridData)
 
-        const tempGameGrid = document.createElement("div");
-        tempGameGrid.classList.add("game-grid");
+        const tempGameGrid = document.createElement('div');
+        tempGameGrid.classList.add('game-grid');
 
         const rowGridElements = createGameGridElements(gridData);
 
-        const flatGridElements = rowGridElements.flatMap(el => el.children);
-
-        tempGameGrid.addEventListener("click", (event) => {
-            const target = event.target
-            if (target.classList.contains("grid-item")) {
-                console.log("target", target);
-                const xCoord = target.getAttribute("data-x");
-                const yCoord = target.getAttribute("data-y");
-                let gridDataUnit = gridData[yCoord][xCoord];
-                console.log("gridDataUnit", gridDataUnit);
-                if (!!gridDataUnit) {
-                    console.log("condition succeded");
-                    let gridDataUnitType = gridDataUnit.type;
-                    if (gridDataUnitType === BOMB_TYPE) {
-                        target.innerText = "*";
-                        target.classList.add("grid-bomb-item");
-                    }
-                    if (gridDataUnitType === NUMBER_TYPE) {
-                        target.innerText = gridDataUnit.number;
-                        target.classList.add("grid-number-item");
-                    }
-                    if (gridDataUnitType === EMPTY_TYPE) {
-                        target.classList.add("grid-empty-item");
-                    }
-                }
-            }
-        })
+        tempGameGrid.addEventListener('click', createHandleCellClick(gridData))
 
         rowGridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
 
@@ -150,7 +170,7 @@
         //console.log(bombPositions);
     }
 
-    console.log("begin initialize");
+    console.log('begin initialize');
     initializeGameGrid();
 
 })()
