@@ -16,13 +16,9 @@
             rowElememnt.className = "grid-row";
             for (let j = 0; j < gridData[i].length; j++) {
                 let cell = document.createElement("div");
-                if (gridData[i][j].type === BOMB_TYPE) {
-                    cell.innerText = "*";
-                }
-                if (gridData[i][j].type === NUMBER_TYPE) {
-                    cell.innerText = gridData[i][j].number;
-                }
                 cell.className = "grid-item";
+                cell.setAttribute('data-x', j)
+                cell.setAttribute('data-y', i)
                 rowElememnt.appendChild(cell);
             }
             rowGridElements.push(rowElememnt);
@@ -32,12 +28,18 @@
     };
 
     function generateBombPositions(maxX, maxY, size) {
-        bombPositions = [];
-
-        return Array.from((new Array(size))).map(() => ({
-            x: Math.floor(Math.random() * Math.floor(maxX)),
-            y: Math.floor(Math.random() * Math.floor(maxY)),
-        }));
+        let bombPositions = [];
+        for (let i = 0; i < size; i++) {
+            let x;
+            let y;
+            do {
+                x = Math.floor(Math.random() * Math.floor(maxX));
+                y = Math.floor(Math.random() * Math.floor(maxY));
+            }
+            while (bombPositions.find(bp => bp.x === x && bp.y === y));
+            bombPositions.push({ x, y });
+        }
+        return bombPositions;
     }
 
     function countBombsAround(x, y, bombPositions) {
@@ -79,7 +81,7 @@
             bombAmount++;
         }
 
-        return bombAmount
+        return bombAmount;
     }
 
     function generateGridData(maxX, maxY, bombPositions) {
@@ -112,9 +114,38 @@
         const tempGameGrid = document.createElement("div");
         tempGameGrid.classList.add("game-grid");
 
-        const gridElements = createGameGridElements(gridData);
+        const rowGridElements = createGameGridElements(gridData);
 
-        gridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
+        const flatGridElements = rowGridElements.flatMap(el => el.children);
+
+        tempGameGrid.addEventListener("click", (event) => {
+            const target = event.target
+            if (target.classList.contains("grid-item")) {
+                console.log("target", target);
+                const xCoord = target.getAttribute("data-x");
+                const yCoord = target.getAttribute("data-y");
+                let gridDataUnit = gridData[yCoord][xCoord];
+                console.log("gridDataUnit", gridDataUnit);
+                if (!!gridDataUnit) {
+                    console.log("condition succeded");
+                    let gridDataUnitType = gridDataUnit.type;
+                    if (gridDataUnitType === BOMB_TYPE) {
+                        target.innerText = "*";
+                        target.classList.add("grid-bomb-item");
+                    }
+                    if (gridDataUnitType === NUMBER_TYPE) {
+                        target.innerText = gridDataUnit.number;
+                        target.classList.add("grid-number-item");
+                    }
+                    if (gridDataUnitType === EMPTY_TYPE) {
+                        target.classList.add("grid-empty-item");
+                    }
+                }
+            }
+        })
+
+        rowGridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
+
         ROOT_ELEMENT.appendChild(tempGameGrid);
         //console.log(bombPositions);
     }
