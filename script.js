@@ -138,6 +138,19 @@
         }
     }
 
+    function handleRightClick(event) {
+        const target = event.target
+        if (target.classList.contains('grid-item') && !bombFound) {
+            event.preventDefault();
+            if (target.classList.contains('flagged')) {
+                target.classList.remove('flagged');
+            } else if (!target.classList.contains('grid-number-item') && !target.classList.contains('grid-empty-item')) {
+                target.classList.add('flagged');
+            }
+        }
+
+    }
+
     function addClassByElementType(gridElement, elementType, number) {
         if (elementType === NUMBER_TYPE) {
             gridElement.innerText = number;
@@ -163,6 +176,7 @@
         const rowGridElements = createGameGridElements(gridData);
 
         tempGameGrid.addEventListener('click', createHandleCellClick(gridData))
+        tempGameGrid.addEventListener('contextmenu', handleRightClick)
 
         rowGridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
 

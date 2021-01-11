@@ -41,3 +41,10 @@ div.grid-bomb-item {
 div.grid-empty-item {
     background-color: rgb(110, 113, 111);
 }
+
+div.flagged {
+    background-image: url('https://www.google.com/logos/fnbx/minesweeper/flag_icon.png');
+    background-position: center;
+    background-size: contain;
+    background-color: rgb(3, 65, 3);
+}
