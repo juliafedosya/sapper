@@ -9,9 +9,11 @@
     const EMPTY_TYPE = 'EMPTY'
     const Y_ATTRIBUTE = 'data-y';
     const X_ATTRIBUTE = 'data-x';
+    const bombPositions = generateBombPositions(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, BOMB_AMOUNT);
+    const gridData = generateGridData(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, bombPositions);
     let bombFound = false;
 
-    function createGameGridElements(gridData) {
+    function createGameGridElements() {
         const rowGridElements = [];
 
         for (let i = 0; i < gridData.length; i++) {
@@ -109,29 +111,48 @@
         return gridData;
     }
 
-    function createHandleCellClick(gridData) {
-        return (event) => {
-            if (!bombFound) {
-                const target = event.target
-                if (target.classList.contains('grid-item')) {
-                    const xCoord = target.getAttribute(X_ATTRIBUTE);
-                    const yCoord = target.getAttribute(Y_ATTRIBUTE);
-                    let gridDataUnit = gridData[yCoord][xCoord];
-                    if (!!gridDataUnit) {
-                        let gridDataUnitType = gridDataUnit.type;
-                        if (gridDataUnitType === BOMB_TYPE) {
-                            bombFound = true;
-                            let gridItems = Array.from(document.getElementsByClassName('grid-item'));
-                            gridItems.forEach(elem => {
-                                let gridUnit = gridData[elem.getAttribute(Y_ATTRIBUTE)][elem.getAttribute(X_ATTRIBUTE)];
-                                if ((!!gridUnit) && gridUnit.type === BOMB_TYPE) {
-                                    elem.innerText = '*';
-                                    elem.classList.add('grid-bomb-item');
-                                }
-                            })
-                        } else {
-                            addClassByElementType(target, gridDataUnitType, gridDataUnit.number);
-                        }
+    function applyForEachGridElementWithType(cellType, processCell) {
+        let gridItems = Array.from(document.getElementsByClassName('grid-item'));
+        gridItems.forEach(elem => {
+            let gridUnit = gridData[elem.getAttribute(Y_ATTRIBUTE)][elem.getAttribute(X_ATTRIBUTE)];
+            if ((!!gridUnit) && gridUnit.type === cellType) {
+                processCell(elem);
+            }
+        })
+    }
+
+    function displayBomb(elem) {
+        if (!elem.classList.contains('flagged')) {
+            elem.innerText = '*';
+            elem.classList.add('grid-bomb-item');
+        } else {
+            console.log('flagged element', elem);
+        }
+    }
+
+    function displayEmpty(elem) {
+        elem.classList.add('grid-empty-item');
+    }
+
+    function displayNumber(elem, number) {
+        elem.innerText = number;
+        elem.classList.add('grid-number-item');
+    }
+
+    function createHandleCellClick(event) {
+        if (!bombFound) {
+            const target = event.target
+            if (target.classList.contains('grid-item')) {
+                const xCoord = target.getAttribute(X_ATTRIBUTE);
+                const yCoord = target.getAttribute(Y_ATTRIBUTE);
+                let gridDataUnit = gridData[yCoord][xCoord];
+                if (!!gridDataUnit) {
+                    let gridDataUnitType = gridDataUnit.type;
+                    if (gridDataUnitType === BOMB_TYPE) {
+                        bombFound = true;
+                        applyForEachGridElementWithType(BOMB_TYPE, displayBomb);
+                    } else {
+                        addClassByElementType(target, gridDataUnitType, gridDataUnit.number);
                     }
                 }
             }
@@ -153,30 +174,23 @@
 
     function addClassByElementType(gridElement, elementType, number) {
         if (elementType === NUMBER_TYPE) {
-            gridElement.innerText = number;
-            gridElement.classList.add('grid-number-item');
+            displayNumber(gridElement, number);
         }
         if (elementType === EMPTY_TYPE) {
-            gridElement.classList.add('grid-empty-item');
-        }
-        if (elementType === BOMB_TYPE) {
-            gridElement.innerText = '*';
-            gridElement.classList.add('grid-bomb-item');
+            displayEmpty(gridElement);
         }
     }
 
     function initializeGameGrid() {
-        const bombPositions = generateBombPositions(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, BOMB_AMOUNT);
-        const gridData = generateGridData(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, bombPositions);
         // console.log('gridData', gridData)
 
         const tempGameGrid = document.createElement('div');
         tempGameGrid.classList.add('game-grid');
 
-        const rowGridElements = createGameGridElements(gridData);
+        const rowGridElements = createGameGridElements();
 
-        tempGameGrid.addEventListener('click', createHandleCellClick(gridData))
-        tempGameGrid.addEventListener('contextmenu', handleRightClick)
+        tempGameGrid.addEventListener('click', createHandleCellClick);
+        tempGameGrid.addEventListener('contextmenu', handleRightClick);
 
         rowGridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
 
