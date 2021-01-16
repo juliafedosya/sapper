@@ -11,7 +11,55 @@
     const X_ATTRIBUTE = 'data-x';
     const bombPositions = generateBombPositions(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, BOMB_AMOUNT);
     const gridData = generateGridData(GAME_GRID_WIDTH, GAME_GRID_HEIGHT, bombPositions);
+    const iteratedElements = [];
     let bombFound = false;
+
+    function openCells(xCoord, yCoord) {
+        console.log('yCoord, xCoord', yCoord, xCoord)
+        openNeighbourCells(xCoord, yCoord);
+    }
+
+    function openNeighbourCells(xCoord, yCoord) {
+        console.log('total iterated cells', iteratedElements);
+        let currentGridData = gridData[yCoord][xCoord];
+        iteratedElements.push([xCoord, yCoord]);
+        if (!!currentGridData) {
+            let currentElement = document.querySelector('div[data-x=' + '"' + xCoord + '"' + '][data-y=' + '"' + yCoord + '"]');
+            if (currentGridData.type === NUMBER_TYPE) {
+                displayNumber(currentElement, currentGridData.number);
+            } else if (currentGridData.type === EMPTY_TYPE) {
+                let currentIteratedCells = createNeighbourElements(xCoord, yCoord, iteratedElements);
+                console.log('current iteration cells', currentIteratedCells);
+                currentIteratedCells.forEach(tuple => {
+                    if (tuple[0] < GAME_GRID_WIDTH && tuple[1] < GAME_GRID_HEIGHT && tuple[0] >= 0 && tuple[1] >= 0) {
+                        openNeighbourCells(tuple[0], tuple[1]);
+                    }
+                });
+                displayEmpty(currentElement);
+            } else {
+                return;
+            }
+        }
+    }
+
+    function createNeighbourElements(x, y, iteratedCells) {
+        let cells = [
+            [x - 1, y],
+            [x, y - 1],
+            [x - 1, y - 1],
+            [x + 1, y + 1],
+            [x, y + 1],
+            [x + 1, y],
+            [x - 1, y + 1],
+            [x + 1, y - 1]
+        ];
+        if (iteratedCells.length === 0) {
+            return cells;
+        }
+        console.log('filtered elements', cells.filter(cell => iteratedCells.find(iteratedCell => cell[0] !== iteratedCell[0] && cell[1] !== iteratedCell[1])));
+
+        return cells.filter(cell => !iteratedCells.find(iteratedCell => cell[0] === iteratedCell[0] && cell[1] === iteratedCell[1]));
+    }
 
     function createGameGridElements() {
         const rowGridElements = [];
@@ -131,12 +179,24 @@
     }
 
     function displayEmpty(elem) {
-        elem.classList.add('grid-empty-item');
+        removeIfFlagged(elem);
+        if (!elem.classList.contains('grid-empty-item')) {
+            elem.classList.add('grid-empty-item');
+        }
     }
 
     function displayNumber(elem, number) {
-        elem.innerText = number;
-        elem.classList.add('grid-number-item');
+        removeIfFlagged(elem);
+        if (!elem.classList.contains('grid-number-item')) {
+            elem.innerText = number;
+            elem.classList.add('grid-number-item');
+        }
+    }
+
+    function removeIfFlagged(elem) {
+        if (elem.classList.contains('flagged')) {
+            elem.classList.remove('flagged');
+        }
     }
 
     function createHandleCellClick(event) {
@@ -152,7 +212,7 @@
                         bombFound = true;
                         applyForEachGridElementWithType(BOMB_TYPE, displayBomb);
                     } else {
-                        addClassByElementType(target, gridDataUnitType, gridDataUnit.number);
+                        openCells(parseInt(xCoord), parseInt(yCoord));
                     }
                 }
             }
@@ -172,18 +232,7 @@
 
     }
 
-    function addClassByElementType(gridElement, elementType, number) {
-        if (elementType === NUMBER_TYPE) {
-            displayNumber(gridElement, number);
-        }
-        if (elementType === EMPTY_TYPE) {
-            displayEmpty(gridElement);
-        }
-    }
-
     function initializeGameGrid() {
-        // console.log('gridData', gridData)
-
         const tempGameGrid = document.createElement('div');
         tempGameGrid.classList.add('game-grid');
 
@@ -195,6 +244,8 @@
         rowGridElements.forEach(gridElement => tempGameGrid.appendChild(gridElement));
 
         ROOT_ELEMENT.appendChild(tempGameGrid);
+        console.log('grid data', gridData)
+
         //console.log(bombPositions);
     }
 
